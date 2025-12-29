@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// ──────────────────────────────
+// BETTER AUTH CORE MODELS (DO NOT CHANGE NAMES/TYPES)
+// ──────────────────────────────
+model User {
+  id            String  @id @default(cuid())
+  name          String?
+  email         String  @unique
+  emailVerified Boolean @default(false)
+  image         String?
+  role          Role    @default(staff)
+  banned        Boolean?
+  banReason     String?
+  banExpires    DateTime?
+  // Better Auth relations (required)
+  accounts Account[]
+  sessions Session[]
+
+
+  // Your inventory relations
+  purchases Purchase[]
+  sales     Sale[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+
+  providerId        String
+  password          String? @db.Text
+  accountId         String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ providerId,accountId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expiresAt DateTime
+  impersonatedBy String?
+
+  ipAddress String?   // <--- optional, required by Better Auth
+  userAgent String?   // <--- optional, required by Better Auth
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ──────────────────────────────
+// YOUR INVENTORY MODELS (unchanged)
+// ──────────────────────────────
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  products    Product[]
+}
+
+model Supplier {
+  id            String     @id @default(uuid())
+  name          String
+  phone         String?
+  email         String?
+  contactPerson String?
+  products      Product[]
+  purchases     Purchase[]
+}
+
+model Customer {
+  id    String  @id @default(uuid())
+  name  String
+  phone String?
+  email String?
+  sales Sale[]
+}
+
+model Product {
+  id              String         @id @default(uuid())
+  name            String
+  sku             String         @unique
+  purchasePrice   Decimal        @db.Decimal(10, 2)
+  salePrice       Decimal        @db.Decimal(10, 2)
+  quantityInStock Int
+  reorderLevel    Int
+  unit            String
+  categoryId      String
+  supplierId      String
+  category        Category       @relation(fields: [categoryId], references: [id])
+  supplier        Supplier       @relation(fields: [supplierId], references: [id])
+  purchaseItems   PurchaseItem[]
+  saleItems       SaleItem[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Purchase {
+  id         String         @id @default(uuid())
+  supplierId String
+  userId     String
+  date       DateTime       @default(now())
+  total      Decimal        @db.Decimal(10, 2)
+  supplier   Supplier       @relation(fields: [supplierId], references: [id])
+  user       User           @relation(fields: [userId], references: [id])
+  items      PurchaseItem[]
+}
+
+model PurchaseItem {
+  id         String   @id @default(uuid())
+  purchaseId String
+  productId  String
+  quantity   Int
+  price      Decimal  @db.Decimal(10, 2)
+  product    Product  @relation(fields: [productId], references: [id])
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+}
+
+model Sale {
+  id         String     @id @default(uuid())
+  customerId String?
+  userId     String
+  date       DateTime   @default(now())
+  total      Decimal    @db.Decimal(10, 2)
+  customer   Customer?  @relation(fields: [customerId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+  items      SaleItem[]
+}
+
+model SaleItem {
+  id        String  @id @default(uuid())
+  saleId    String
+  productId String
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2)
+  product   Product @relation(fields: [productId], references: [id])
+  sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  admin
+  manager
+  staff
+}
