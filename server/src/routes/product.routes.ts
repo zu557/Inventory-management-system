@@ -13,12 +13,12 @@ import {
 
 const router = Router();
 
-// router.use(authMiddleware);
+router.use(authMiddleware);
 
 router.get("/", getProducts);
 // router.get("/:id", getProduct);
-router.post("/", createProduct);
-// router.post("/", permit("admin", "manager"), createProduct);
+// router.post("/", createProduct);
+router.post("/", permit("admin", "manager"), createProduct);
 router.patch("/:id", permit("admin", "manager"), updateProduct);
 router.delete("/:id", permit("admin"), deleteProduct);
 // router.get("/", authenticate, getProducts);

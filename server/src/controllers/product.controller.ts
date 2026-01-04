@@ -5,6 +5,7 @@ import { Request, Response } from 'express';
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
+    console.log("getProducts controller hit")
     const products = await prisma.product.findMany({
       include: {
         category: true,
@@ -20,7 +21,8 @@ export const getProducts = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    console.log("req :",req)
+    console.log("create product hitted.")
+    console.log("req.body in createProduct :",req.body)
     const {
       name, sku, purchasePrice, salePrice, quantityInStock,
       reorderLevel, unit, categoryId, supplierId

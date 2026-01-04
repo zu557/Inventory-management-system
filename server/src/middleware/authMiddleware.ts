@@ -12,7 +12,8 @@ const authMiddleware = async (
   });
 
   if (!session) {
-    res.status(400).json({
+    console.log("authMiddleware : session found :",session)
+    res.status(401).json({
       message: "unauthorized",
     });
 
@@ -20,6 +21,8 @@ const authMiddleware = async (
   }
 
   req.user = session.user;
+  console.log("session in the middleware :",session)
+  // console.log("req.user in the middleware :",req.user)
   next();
 };
 
