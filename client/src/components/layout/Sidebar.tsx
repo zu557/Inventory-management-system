@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { authClient } from "@/lib/client-auth"; 
 import { memo, useCallback, useState } from 'react';
 import {
   Home,
@@ -25,7 +26,7 @@ const MENU = {
     { href: '/admin/users', label: 'Manage Users', icon: Users },
     { href: '/admin/suppliers', label: 'Suppliers', icon: Building2 },
     { href: '/admin/categories', label: 'Categories', icon: Tags },
-    { href: '/admin/inventory', label: 'All Inventory', icon: Package },
+    { href: '/inventory', label: 'All Inventory', icon: Package },
     { href: '/stock-movements', label: 'Stock History', icon: History },
     { href: '/inventory/low-stock', label: 'Low Stock Alert', icon: AlertCircle },
     { href: '/admin/settings', label: 'Settings', icon: Settings },
@@ -62,10 +63,15 @@ function Sidebar({ role }: { role: Role }) {
     [pathname]
   );
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsLoggingOut(true);
-    // Replace with your actual logout URL or logic
-    window.location.href = '/login';
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          window.location.href = '/login';
+        },
+      },
+    });
   };
 
   return (

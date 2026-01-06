@@ -1,25 +1,25 @@
 
-import { getServerSession } from "next-auth"
-import { authOptions } from "../api/auth/[...nextauth]/route"
-import { redirect } from "next/navigation"
-import Navbar from "@/components/layout/Navbar"
+// import { getServerSession } from "next-auth"
+// import { authOptions } from "../api/auth/[...nextauth]/route"
+// import { redirect } from "next/navigation"
+// import Navbar from "@/components/layout/Navbar"
 
 export default async function Dashboard() {
-  const session = await getServerSession(authOptions)
-  if (!session) redirect("/login")
+  // const session = await getServerSession(authOptions)
+  // if (!session) redirect("/login")
 
-    const role = session.user.role
+  //   const role = session.user.role
   
-    if (role !== "ADMIN" && role !== "MANAGER") {
-      return <h1 className="p-8 text-red-600">Access Denied</h1>
-    }
+  //   if (role !== "ADMIN" && role !== "MANAGER") {
+  //     return <h1 className="p-8 text-red-600">Access Denied</h1>
+  //   }
   
 
   return (
     <div className="p-8">
-      <Navbar/>
+      {/* <Navbar/>
       <h1 className="text-2xl font-bold">Welcome, {session.user?.username}</h1>
-      <p>Email: {session.user?.email}</p>
+      <p>Email: {session.user?.email}</p> */}
     </div>
   )
 }

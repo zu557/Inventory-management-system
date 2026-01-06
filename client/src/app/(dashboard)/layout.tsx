@@ -1,16 +1,11 @@
+// app/(dashboard)/layout.tsx   ← This remains a Server Component (no 'use client'!)
 
-// import { getServerSession } from "next-auth";
-// app/dashboard/layout.tsx
-// import { authOptions } from "../api/auth/[...nextauth]/route"
-// import { redirect } from "next/navigation";
+import { AuthProvider } from "@/lib/DashboardClientWrapper";
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // const session = await getServerSession(authOptions);
-  // if (!session?.user) redirect("/login");
-
-  return <>{children}</>;
+  return <AuthProvider>{children}</AuthProvider>;
 }

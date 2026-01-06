@@ -1,80 +1,87 @@
 import { NextRequest, NextResponse } from "next/server";
 import { betterFetch } from "@better-fetch/fetch";
 import { Session } from "better-auth/types";
+// const BACKEND_URL = "http://localhost:5000";
 
+// type Role = "admin" | "staff" | "manager";
 const ROLES = ["admin", "staff", "manager"] as const;
 type Role = typeof ROLES[number];
 
-// Public routes (no auth required)
-const PUBLIC_ROUTES = ["/login", "/"]; // Add more if you have other public pages
-
-// Role-based default redirects after login
-const ROLE_DEFAULT_PATH: Record<Role, string> = {
-  admin: "/admin",
-  manager: "/manager",
-  staff: "/staff",
+const roleAccess: Record<string, Role[]> = {
+  "/admin": ["admin"],
+  "/staff": ["staff", "admin"],
+  "/manager": ["manager", "admin"],
+  "/inventory": ["staff ", "manager", "admin"],
 };
 
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow public routes without checking session
-  if (PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
-    try {
-      const { data: session } = await betterFetch<Session>(
-        "http://localhost:5000/api/auth/get-session",
-        {
-          baseURL: req.nextUrl.origin,
-          method: "GET",
-          credentials: "include",
-          headers: {
-            cookie: req.headers.get("cookie") || "",
-          },
-        }
-      );
 
-      const role = session?.user?.role?.toLowerCase() as Role | undefined;
-
-      // If already logged in and trying to access auth pages → redirect to their dashboard
-      if (session && role && ROLES.includes(role) && pathname.startsWith("/login") ) {
-        return NextResponse.redirect(new URL(ROLE_DEFAULT_PATH[role], req.url));
-      }
-
-      return NextResponse.next();
-    } catch (err) {
-      // Session fetch failed → treat as not logged in, allow public page
-      return NextResponse.next();
-    }
-  }
-
-  // All other routes are protected (dashboard)
   try {
     const { data: session } = await betterFetch<Session>(
-      "http://localhost:5000/api/auth/get-session",
-      {
-        baseURL: req.nextUrl.origin,
-        method: "GET",
-        credentials: "include",
-        headers: {
-          cookie: req.headers.get("cookie") || "",
-        },
-      }
+          "http://localhost:5000/api/auth/get-session",
+          {
+            baseURL: req.nextUrl.origin,
+            method: "GET",
+            credentials: "include",
+            headers: {
+              cookie: req.headers.get("cookie") || "",
+            },
+          }
+        );
+    // const cookie = req.headers.get("cookie") || "";
+
+    // const res = await fetch(`${BACKEND_URL}/api/auth/get-session`, {
+    //   headers: {
+    //     cookie,
+    //   },
+    //   credentials: "include",
+    // });
+    console.log("this is response object is from middleware ",session)
+    // 🚫 Not logged in
+    // if (!res.ok) {
+    //   return NextResponse.redirect(new URL("/login", req.url));
+    // }
+   
+    const role = session?.user?.role?.toLowerCase();
+
+    if (
+      session &&
+      pathname.startsWith("/login") &&
+      role &&
+      ROLES.includes(role as Role)
+    ) {
+      return NextResponse.redirect(
+        new URL(`/${role}`, req.url)
+      );
+    }
+       /* --------------------------------
+       PROTECTED ROUTES
+    --------------------------------- */
+    const matchedRoute = Object.keys(roleAccess).find((route) =>
+      pathname.startsWith(route)
     );
 
+    if (!matchedRoute) {
+      return NextResponse.next();
+    }
     if (!session) {
-      // Not logged in → redirect to login (preserve attempted URL if you want)
-      const loginUrl = new URL("/login", req.url);
-      // Optional: loginUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+    // const data = await session.user.json();
+  
+    // 🚫 No role
+    if (!role) {
+      return NextResponse.redirect(new URL("/unauthorized", req.url));
     }
 
-    const role = session.user.role?.toLowerCase() as Role | undefined;
-
-    if (!role || !ROLES.includes(role)) {
-      return NextResponse.redirect(new URL("/unauthorized", req.url)); // Or /login
+    // 🚫 Role not allowed
+    if (!roleAccess[matchedRoute].includes(role)) {
+      return NextResponse.redirect(new URL("/unauthorized", req.url));
     }
 
-    // Optionally: further role checks here if needed, but layout.tsx handles finer permissions
+    // ✅ Authorized
     return NextResponse.next();
   } catch (err) {
     console.error("Middleware auth error:", err);
@@ -83,14 +90,31 @@ export default async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico
-     * - public folder files
-     */
-    "/((?!_next/static|_next/image|favicon.ico|public/|.png|.jpg|.svg).*)",
-  ],
+  matcher: ["/admin/:path*", "/staff/:path*", "/manager/:path*", "/login", "/inventory/:path*"],
 };
+
+// import { betterFetch } from "@better-fetch/fetch";
+// import { Session } from "better-auth/types";
+// import { NextResponse, type NextRequest } from "next/server";
+
+// export default async function authMiddleware(request: NextRequest) {
+//   const { data: session } = await betterFetch<Session>(
+//     "http://localhost:5000/api/auth/get-session",
+//     {
+//       baseURL: request.nextUrl.origin,
+//       method: "GET",
+//       credentials: "include",
+//       headers: {
+//         cookie: request.headers.get("cookie") || "",
+//       },
+//     }
+//   );
+//   console.log("this session is from middleware ",session)
+//   if (!session) {
+//     return NextResponse.redirect(new URL("/login", request.url));
+//   }
+// }
+
+// export const config = {
+//   matcher: ["/admin", "/manager","/staff"],
+// };
