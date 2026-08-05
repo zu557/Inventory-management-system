@@ -11,6 +11,7 @@ export const auth = betterAuth({
   plugins: [
     admin({
       adminRoles: ["admin"],
+      defaultRole: "staff",
       impersonation: true,
     }),
   ],

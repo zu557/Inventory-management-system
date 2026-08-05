@@ -12,7 +12,7 @@ import categoryRoutes from "./routes/category.routes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { toNodeHandler, fromNodeHeaders  } from "better-auth/node";
 import { auth } from "./auth.js";
-import cookieParser from "cookie-parser";
+import cookieParser from "cookie-parser"; 
 
 
 const app = express();
@@ -23,12 +23,12 @@ app.use(
     credentials: true, // Allow credentials (cookies, authorization headers, etc.)
   })
 );
-app.all("/api/auth/*splat", toNodeHandler(auth)); //For ExpressJS v5 
+app.use("/api/auth", toNodeHandler(auth));
 app.get("/api/me", async (req, res) => {
   const session = await auth.api.getSession({
      headers: fromNodeHeaders(req.headers),
    });
- return res.json(session);
+ return res.json(session); 
 });
 /* CLIENT (Next.js)                 SERVER (Express)
 ----------------------------------------------------------
